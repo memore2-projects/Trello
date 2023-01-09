@@ -26,6 +26,51 @@ li {
   display: none !important;
 }
 
+.dragged {
+  transform: rotate(4deg) !important;
+  transform-origin: top left !important;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0.8;
+}
+
+/* button */
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.fill-btn {
+  padding: 8px;
+  background-color: #0179bf;
+  color: white;
+}
+
+/* list container */
+.list-container {
+  width: 280px;
+  padding: 12px;
+  background-color: #eee;
+  border-radius: 4px;
+}
+
+/* add form */
+.add-form textarea {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.add-form .ghost-btn {
+  background-color: transparent;
+  font-size: 16px;
+  vertical-align: middle;
+  color: #444;
+}
+
 /* global header */
 .global-header {
   display: flex;
@@ -48,44 +93,12 @@ li {
 .main {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 16px;
   padding: 20px;
 }
 
-.add-another-btn {
-  width: 240px;
-  background-color: #5498d0;
-  color: white;
-}
-
-.add-list input {
-  display: block;
-  width: 100%;
-  height: 28px;
-  margin-bottom: 8px;
-}
-
-.add-list-btn {
-  padding: 8px;
-  background-color: #0179bf;
-  color: white;
-}
-
-.close-list-btn {
-  background-color: transparent;
-  font-size: 16px;
-  vertical-align: middle;
-  color: #444;
-}
-
 /* trello-list */
-.trello-list {
-  width: 240px;
-  padding: 12px;
-  background-color: #eee;
-  border-radius: 4px;
-}
-
 .trello-list-title {
   position: relative;
   font-size: 20px;
@@ -112,16 +125,11 @@ li {
   background-color: #fff;
   border-radius: 4px;
   font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
-.ghost-btn {
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  padding: 4px;
-}
 
-.add-card-btn {
+.add-open-btn {
   font-size: 14px;
   color: #444;
 }
@@ -132,4 +140,21 @@ li {
   text-align: right;
   margin-top: 4px;
   color: #444;
+}
+
+/* add list article */
+.add-list-article {
+  position: relative;
+}
+
+.add-another-btn {
+  width: 280px;
+  background-color: #5498d0;
+  color: white;
+}
+
+.add-list {
+  position: absolute;
+  top: 0;
+  left: 0;
 }

@@ -55,7 +55,7 @@ class App extends Component {
       </header>
 
       <main class="main">
-        <article class="trello-list">
+        <article class="trello-list list-container">
           <h2 class="trello-list-title">
             <label for="trello-list-input">Tasks to Do</label>
             <input
@@ -76,22 +76,24 @@ class App extends Component {
             </li>
           </ul>
 
-          <button class="add-card-btn ghost-btn">+ Add a card</button>
+          <button class="add-open-btn ghost-btn">+ Add a card</button>
 
-          <form class="add-list hidden">
-            <input type="text" placeholder="Enter a title for this card..." />
-            <button class="add-list-btn">Add list</button>
-            <button class="close-list-btn">X</button>
+          <form class="add-card add-form hidden">
+            <textarea placeholder="Enter a title for this card..."></textarea>
+            <button class="add-card-btn fill-btn">Add card</button>
+            <button class="close-card-btn ghost-btn">X</button>
           </form>
         </article>
 
-        <button class="add-another-btn ghost-btn">+ Add another list</button>
-        
-        <form class="add-list trello-list">
-          <input type="text" placeholder="Enter list title..." />
-          <button class="add-list-btn">Add list</button>
-          <button class="close-list-btn">X</button>
-        </form>
+        <article class="add-list-article">
+          <button class="add-another-btn ghost-btn">+ Add another list</button>
+          
+          <form class="add-list add-form list-container">
+            <textarea placeholder="Enter list title..."></textarea>
+            <button class="add-list-btn fill-btn">Add list</button>
+            <button class="close-list-btn ghost-btn">X</button>
+          </form>
+        </article>
       </main>
     `;
   }
