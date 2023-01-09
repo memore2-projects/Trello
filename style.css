@@ -1,0 +1,68 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #0179bf;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* global header */
+.global-header {
+  display: flex;
+  align-items: center;
+  background-color: #05649f;
+  padding: 16px;
+  color: white;
+}
+
+.global-header i {
+  font-size: 32px;
+}
+
+.global-header h1 {
+  margin: 0;
+  padding-left: 4px;
+}
+
+/* main */
+.main {
+  padding: 20px;
+}
+
+.add-list {
+  width: 240px;
+  padding: 8px;
+  background-color: #eee;
+  border-radius: 4px;
+}
+
+.add-list input {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-bottom: 8px;
+}
+
+.add-list-btn {
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  background-color: #0179bf;
+  color: white;
+}
+
+.close-list-btn {
+  border: none;
+  background-color: transparent;
+  font-size: 16px;
+  vertical-align: middle;
+  color: #444;
+}

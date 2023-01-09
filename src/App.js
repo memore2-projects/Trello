@@ -49,11 +49,17 @@ class App extends Component {
      *   - Escape 키를 눌렀을 때
      */
     return `
-      <header>
+      <header class="global-header">
         <i class='bx bxs-dashboard'></i>
         <h1>Trello</h1>
       </header>
-      <main>
+      <main class="main">
+        <form class="add-list">
+          <input type="text" placeholder="Enter list title..." />
+          <button class="add-list-btn">Add list</button>
+          <button class="close-list-btn">X</button>
+        </form>
+
       </main>
     `;
   }
