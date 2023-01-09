@@ -1,5 +1,5 @@
 const trello = {
-  lists: [
+  list: [
     {
       id: 1,
       title: 'todo',

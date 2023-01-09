@@ -4,6 +4,8 @@ import trello from './temp/mockData.js';
 
 class App extends Component {
   render() {
+    const { list } = window.localStorage.getItem('trello');
+
     /**
      * 초기 렌더링
      *
@@ -48,6 +50,7 @@ class App extends Component {
      *   - popup 우측 상단의 X 버튼을 클릭
      *   - Escape 키를 눌렀을 때
      */
+    // prettier-ignore
     return `
       <header class="global-header">
         <i class='bx bxs-dashboard'></i>
@@ -55,35 +58,9 @@ class App extends Component {
       </header>
 
       <main class="main">
-        <article class="trello-list list-container">
-          <h2 class="trello-list-title">
-            <label for="trello-list-input">Tasks to Do</label>
-            <input
-              type="text" 
-              id="trello-list-input" 
-              class="trello-list-input"
-            />
-          </h2>
-
-          <ul class="cards">
-            <li class="card-item">
-              React
-              <i class='bx bx-align-right'></i>
-            </li>
-            <li class="card-item">
-              TypeScript
-              <i class='bx bx-align-right'></i>
-            </li>
-          </ul>
-
-          <button class="add-open-btn ghost-btn">+ Add a card</button>
-
-          <form class="add-card add-form hidden">
-            <textarea placeholder="Enter a title for this card..."></textarea>
-            <button class="add-card-btn fill-btn">Add card</button>
-            <button class="close-card-btn ghost-btn">X</button>
-          </form>
-        </article>
+        ${list.map(item => new TrelloList({
+          trelloList: item
+        })).join('')}
 
         <article class="add-list-article">
           <button class="add-another-btn ghost-btn">+ Add another list</button>

@@ -129,16 +129,16 @@ li {
   cursor: pointer;
 }
 
-.add-open-btn {
-  font-size: 14px;
-  color: #444;
-}
-
-.bx-align-right {
+.card-item .bx-align-right {
   display: block;
   transform: rotate(180deg);
   text-align: right;
   margin-top: 4px;
+  color: #444;
+}
+
+.add-open-btn {
+  font-size: 14px;
   color: #444;
 }
 
