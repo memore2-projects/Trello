@@ -1,17 +1,29 @@
+/* common */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
   background-color: #0179bf;
 }
 
 button {
   cursor: pointer;
+  border: none;
+  border-radius: 4px;
+}
+
+li {
+  list-style: none;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* global header */
@@ -34,14 +46,16 @@ button {
 
 /* main */
 .main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   padding: 20px;
 }
 
-.add-list {
+.add-another-btn {
   width: 240px;
-  padding: 8px;
-  background-color: #eee;
-  border-radius: 4px;
+  background-color: #5498d0;
+  color: white;
 }
 
 .add-list input {
@@ -53,16 +67,69 @@ button {
 
 .add-list-btn {
   padding: 8px;
-  border: none;
-  border-radius: 4px;
   background-color: #0179bf;
   color: white;
 }
 
 .close-list-btn {
-  border: none;
   background-color: transparent;
   font-size: 16px;
   vertical-align: middle;
+  color: #444;
+}
+
+/* trello-list */
+.trello-list {
+  width: 240px;
+  padding: 12px;
+  background-color: #eee;
+  border-radius: 4px;
+}
+
+.trello-list-title {
+  position: relative;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.trello-list-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 24px;
+}
+
+.trello-list-input:active,
+.trello-list-input:focus {
+  opacity: 1;
+}
+
+.card-item {
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.ghost-btn {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.add-card-btn {
+  font-size: 14px;
+  color: #444;
+}
+
+.bx-align-right {
+  display: block;
+  transform: rotate(180deg);
+  text-align: right;
+  margin-top: 4px;
   color: #444;
 }

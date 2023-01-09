@@ -53,13 +53,45 @@ class App extends Component {
         <i class='bx bxs-dashboard'></i>
         <h1>Trello</h1>
       </header>
+
       <main class="main">
-        <form class="add-list">
+        <article class="trello-list">
+          <h2 class="trello-list-title">
+            <label for="trello-list-input">Tasks to Do</label>
+            <input
+              type="text" 
+              id="trello-list-input" 
+              class="trello-list-input"
+            />
+          </h2>
+
+          <ul class="cards">
+            <li class="card-item">
+              React
+              <i class='bx bx-align-right'></i>
+            </li>
+            <li class="card-item">
+              TypeScript
+              <i class='bx bx-align-right'></i>
+            </li>
+          </ul>
+
+          <button class="add-card-btn ghost-btn">+ Add a card</button>
+
+          <form class="add-list hidden">
+            <input type="text" placeholder="Enter a title for this card..." />
+            <button class="add-list-btn">Add list</button>
+            <button class="close-list-btn">X</button>
+          </form>
+        </article>
+
+        <button class="add-another-btn ghost-btn">+ Add another list</button>
+        
+        <form class="add-list trello-list">
           <input type="text" placeholder="Enter list title..." />
           <button class="add-list-btn">Add list</button>
           <button class="close-list-btn">X</button>
         </form>
-
       </main>
     `;
   }
