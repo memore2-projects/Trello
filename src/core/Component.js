@@ -10,11 +10,22 @@ class Component {
    * @public
    * 컴포넌트의 state를 업데이트한다. state가 변경되면 컴포넌트는 re-rendering된다.
    */
-  setState(newState) {
-    this.state = { ...this.state, ...newState };
-    localStorage.setItem('trello', JSON.stringify(this.state));
+  setServerState(newState) {
+    this.serverState = { ...this.serverState, ...newState };
+    localStorage.setItem('trello', JSON.stringify(this.serverState));
 
-    console.log('[RE-RENDERING] state:', this.state);
+    console.log('[RE-RENDERING] serverState:', this.serverState);
+    render();
+  }
+
+  /**
+   * @public
+   * 컴포넌트의 state를 업데이트한다. state가 변경되면 컴포넌트는 re-rendering된다.
+   */
+  setClientState(newState) {
+    this.clientState = { ...this.clientState, ...newState };
+
+    console.log('[RE-RENDERING] clientState:', this.clientState);
     render();
   }
 

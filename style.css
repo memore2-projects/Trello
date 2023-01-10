@@ -48,7 +48,7 @@ li {
   color: white;
 }
 
-/* list container */
+/* list-container */
 .list-container {
   width: 280px;
   padding: 12px;
@@ -56,7 +56,27 @@ li {
   border-radius: 4px;
 }
 
-/* add form */
+/* input-wrapper */
+.input-wrapper {
+  position: relative;
+  font-size: 20px;
+}
+
+.input-wrapper input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 24px;
+  opacity: 0;
+}
+
+.input-wrapper input:active,
+.input-wrapper input:focus {
+  opacity: 1;
+}
+
+/* add-form */
 .add-form textarea {
   display: block;
   width: 100%;
@@ -101,28 +121,12 @@ li {
 
 /* trello-list */
 .trello-list-title {
-  position: relative;
-  font-size: 20px;
   margin-bottom: 8px;
 }
 
-.trello-list-input {
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  width: 100%;
-  height: 24px;
-}
-
-.trello-list-input:active,
-.trello-list-input:focus {
-  opacity: 1;
-}
-
+/* card-item */
 .card-item {
   margin-bottom: 8px;
-  padding: 8px;
   background-color: #fff;
   border-radius: 4px;
   font-size: 14px;
@@ -138,12 +142,19 @@ li {
   color: #444;
 }
 
+.open-card-btn {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  text-align: left;
+}
+
 .add-open-btn {
   font-size: 14px;
   color: #444;
 }
 
-/* add list article */
+/* add-list-article */
 .add-list-article {
   position: relative;
 }
@@ -154,8 +165,56 @@ li {
   color: white;
 }
 
-.add-list {
-  position: absolute;
+/* popup */
+.popup {
+  position: fixed;
   top: 0;
   left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.popup-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 99;
+  min-width: 400px;
+  min-height: 200px;
+  padding: 40px;
+  background-color: white;
+  transform: translate(-50%, -50%);
+}
+
+.popup-header {
+  margin-bottom: 24px;
+}
+
+.popup-title {
+  margin-bottom: 8px;
+}
+
+.popup-title + p {
+  font-size: 14px;
+}
+
+.popup-description h4 {
+  margin-bottom: 8px;
+}
+
+.open-description-btn {
+  width: 100%;
+  font-size: 13px;
+  color: #444;
+  text-align: left;
+  background-color: #eee;
+}
+
+.popup-wrapper .close-popup-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 18px;
+  color: #444;
 }
