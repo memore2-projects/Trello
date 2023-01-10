@@ -4,17 +4,8 @@ import trello from './temp/mockData.js';
 
 class App extends Component {
   render() {
-    const { list } = window.localStorage.getItem('trello');
-
-    /**
-     * 초기 렌더링
-     *
-     * 1. localstorage에 저장되어 있는 상태를 취득해 초기 렌더링한다.
-     * 2. localstorage에 저장되어 있는 상태가 없다면 초기 상태를 제공하고 이를 기반으로 렌더링한다.
-     * 3. textarea에 list title을 입력한 다음 Enter 키를 누르거나 Add list 버튼을 클릭하면 list를 생성한다. -> 빈 값일 때 form 유지
-     * 4. X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈하고, + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
-     * 5.
-     */
+    this.state = window.localStorage.getItem('trello') ?? trello;
+    const { list, isOpenedListForm } = this.state;
 
     /**
      * list 이동
@@ -35,8 +26,6 @@ class App extends Component {
      * card를 다른 card 위로 drag하지 않는 경우
      * 1. drag 중인 마우스 커서의 x축 좌표 내에 위치한 list의 최하단에 drag 중인 card를 이동시킨다.
      * 2. list 외부에 card를 drop해도 정상적으로 동작해야 한다.
-     *
-     *
      */
 
     /**
@@ -50,6 +39,7 @@ class App extends Component {
      *   - popup 우측 상단의 X 버튼을 클릭
      *   - Escape 키를 눌렀을 때
      */
+    // TODO: list, isOpenedListForm 옵셔널 체이닝을 내부에서 해야하는지 고민해보기
     // prettier-ignore
     return `
       <header class="global-header">
@@ -60,19 +50,101 @@ class App extends Component {
       <main class="main">
         ${list.map(item => new TrelloList({
           trelloList: item
-        })).join('')}
+        }).render()).join('') ?? ''}
 
         <article class="add-list-article">
           <button class="add-another-btn ghost-btn">+ Add another list</button>
           
-          <form class="add-list add-form list-container">
+          <form class="add-list add-form list-container ${isOpenedListForm ? '' : 'hidden'}">
             <textarea placeholder="Enter list title..."></textarea>
-            <button class="add-list-btn fill-btn">Add list</button>
-            <button class="close-list-btn ghost-btn">X</button>
+            <button type="submit" class="add-list-btn fill-btn">Add list</button>
+            <button type="button" class="close-list-btn ghost-btn">X</button>
           </form>
         </article>
       </main>
     `;
+  }
+
+  // textarea에 list title을 입력한 다음 Enter 키를 누르거나 Add list 버튼을 클릭하면 list를 생성한다. -> 빈 값일 때 form 유지
+  addList(e) {
+    console.log('[submit이벤트]');
+    const { value } = e.target.querySelector('textarea');
+
+    if (value.trim() === '') return;
+
+    this.setState({
+      list: [
+        ...this.state.list,
+        {
+          id: this.generateNextId(this.state.list),
+          title: value,
+          cards: [],
+          isOpenedCardForm: false,
+        },
+      ],
+    });
+  }
+
+  // const trello = {
+  //   list: [
+  //     {
+  //       id: 1,
+  //       title: 'todo',
+  //       cards: [
+  //         { id: 1, title: '시작', description: '' },
+  //         { id: 2, title: '끝', description: '끝났다.' },
+  //       ],
+  //       isOpenedCardForm: false,
+  //     },
+  //     {
+  //       id: 2,
+  //       title: '시작',
+  //       cards: [
+  //         { id: 1, title: '두번쨰', description: '' },
+  //         { id: 2, title: 'ㄴㄹㄷㄹ', description: '끝났다.' },
+  //       ],
+  //       isOpenedCardForm: false,
+  //     },
+  //   ],
+  //   isOpenedListForm: true,
+  // };
+
+  // X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈
+  closeForm(e) {
+    const parentAddForm = e.target.closest('.add-form');
+
+    parentAddForm.querySelector('textarea').value = '';
+    parentAddForm.classList.add('hidden');
+
+    if (parentAddForm.classList.contains('add-list')) {
+      this.setState({ isOpenedListForm: false });
+    } else {
+      this.setState({
+        list: this.state.list.map(item =>
+          item.id === +parentAddForm.closest('article').dataset.listId ? { ...item, isOpenedCardForm: false } : item
+        ),
+      });
+    }
+  }
+
+  clickCloseForm(e) {
+    // console.log('[click이벤트]');
+    this.closeForm(e);
+  }
+
+  /**
+   * 초기 렌더링
+   *
+   * 4.
+   * 5. + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
+   */
+
+  addEventListener() {
+    return [
+      { type: 'submit', selector: '.add-list', handler: this.addList },
+      { type: 'click', selector: '.close-list-btn', handler: this.clickCloseForm },
+      // { type: 'keydown', selector: '.add-list', handler: this.closeForm },
+    ];
   }
 }
 

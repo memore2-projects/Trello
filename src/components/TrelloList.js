@@ -18,7 +18,7 @@ class TrelloList extends Component {
    */
 
   render() {
-    const { id, title, cards, isOpenedCardForm } = this.props;
+    const { id, title, cards, isOpenedCardForm } = this.props.trelloList;
 
     // prettier-ignore
     return `
@@ -35,15 +35,15 @@ class TrelloList extends Component {
         <ul class="cards">
           ${cards.map(card => new TrelloCard({
             card
-          }))}
+          }).render()).join('')}
         </ul>
 
         <button class="add-open-btn ghost-btn">+ Add a card</button>
 
         <form class="add-card add-form ${isOpenedCardForm ? '' : 'hidden'}">
           <textarea placeholder="Enter a title for this card..."></textarea>
-          <button class="add-card-btn fill-btn">Add card</button>
-          <button class="close-card-btn ghost-btn">X</button>
+          <button type="submit" class="add-card-btn fill-btn">Add card</button>
+          <button type="button" class="close-card-btn ghost-btn">X</button>
         </form>
       </article>
     `;

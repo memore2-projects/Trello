@@ -53,6 +53,8 @@ class Component {
 
         // handler를 monkey patch한다.
         event.handler = e => {
+          e.preventDefault();
+
           // e.target이 selector의 하위 요소일 수도 있다.
           if (e.target.matches(selector) || e.target.closest(selector)) handler(e);
         };
@@ -60,6 +62,11 @@ class Component {
         eventHolder.push(event);
       }
     }
+  }
+
+  generateNextId(targetArr) {
+    // prettier-ignore
+    return Math.max(0, targetArr.map(({id}) => id)) + 1;
   }
 
   /** @abstract */

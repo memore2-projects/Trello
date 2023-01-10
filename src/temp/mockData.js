@@ -19,7 +19,7 @@ const trello = {
       isOpenedCardForm: false,
     },
   ],
-  isOpenedListForm: false,
+  isOpenedListForm: true,
 };
 
 export default trello;
