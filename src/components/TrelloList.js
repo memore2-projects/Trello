@@ -3,7 +3,6 @@ import TrelloCard from './TrelloCard.js';
 
 class TrelloList extends Component {
   /**
-   * 1. + Add a card 버튼을 클릭하면 입력 form을 오픈한다. X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈한다.
    * 2. textarea에 card title을 입력한 다음 Enter 키를 누르거나 Add card 버튼을 클릭하면 list를 생성한다.
    * 3. textarea에 card title을 입력하지 않은 상태에서 Enter 키를 누르거나 Add card 버튼을 클릭하면 card를 생성하지 않는다. 입력 form은 그 상태를 그대로 유지한다.
    * 4. textarea에서 Escape 키를 누르면 입력 form을 클로즈한다.
@@ -22,7 +21,7 @@ class TrelloList extends Component {
 
     // prettier-ignore
     return `
-      <article class="trello-list list-container data-list-id="${id}">
+      <article class="trello-list list-container" data-list-id="${id}">
         <h2 class="trello-list-title">
           <label for="trello-list-input">${title}</label>
           <input
@@ -47,6 +46,17 @@ class TrelloList extends Component {
         </form>
       </article>
     `;
+  }
+
+  addEventListener() {
+    const { openForm, closeForm, handleKeydownForm, addCard } = this.props;
+
+    return [
+      { type: 'click', selector: '.add-open-btn', handler: openForm },
+      { type: 'click', selector: '.close-card-btn', handler: closeForm },
+      { type: 'keydown', selector: '.add-card', handler: handleKeydownForm },
+      { type: 'submit', selector: '.add-card', handler: addCard },
+    ];
   }
 }
 

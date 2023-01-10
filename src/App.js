@@ -4,7 +4,7 @@ import trello from './temp/mockData.js';
 
 class App extends Component {
   render() {
-    this.state = window.localStorage.getItem('trello') ?? trello;
+    this.state = JSON.parse(window.localStorage.getItem('trello')) ?? trello;
     const { list, isOpenedListForm } = this.state;
 
     /**
@@ -49,14 +49,18 @@ class App extends Component {
 
       <main class="main">
         ${list.map(item => new TrelloList({
-          trelloList: item
+          trelloList: item,
+          openForm: this.openForm.bind(this),
+          closeForm: this.closeForm.bind(this),
+          handleKeydownForm: this.handleKeydownForm.bind(this),
+          addCard: this.addCard.bind(this)
         }).render()).join('') ?? ''}
 
         <article class="add-list-article">
           <button class="add-another-btn ghost-btn">+ Add another list</button>
           
           <form class="add-list add-form list-container ${isOpenedListForm ? '' : 'hidden'}">
-            <textarea placeholder="Enter list title..."></textarea>
+            <textarea placeholder="Enter list title..." autofocus></textarea>
             <button type="submit" class="add-list-btn fill-btn">Add list</button>
             <button type="button" class="close-list-btn ghost-btn">X</button>
           </form>
@@ -65,10 +69,16 @@ class App extends Component {
     `;
   }
 
+  // 재사용 함수들
+
+  generateNextId(targetArr) {
+    // prettier-ignore
+    return Math.max(0, +targetArr.length) + 1;
+  }
+
   // textarea에 list title을 입력한 다음 Enter 키를 누르거나 Add list 버튼을 클릭하면 list를 생성한다. -> 빈 값일 때 form 유지
   addList(e) {
-    console.log('[submit이벤트]');
-    const { value } = e.target.querySelector('textarea');
+    const { value } = e.target.querySelector('textarea') ?? e.target;
 
     if (value.trim() === '') return;
 
@@ -83,6 +93,24 @@ class App extends Component {
         },
       ],
     });
+
+    document.querySelector('.add-list textarea').focus();
+  }
+
+  // textarea에 card title을 입력한 다음 Enter 키를 누르거나 Add card 버튼을 클릭하면 card를 생성한다
+  addCard(e) {
+    const { value } = e.target.querySelector('textarea') ?? e.target;
+
+    if (value.trim() === '') return;
+
+    const { listId } = e.target.closest('.trello-list').dataset;
+    const newList = this.state.list.map(item =>
+      item.id === +listId
+        ? { ...item, cards: [...item.cards, { id: this.generateNextId(item.cards), title: value, description: '' }] }
+        : item
+    );
+
+    this.setState({ list: newList });
   }
 
   // const trello = {
@@ -127,23 +155,38 @@ class App extends Component {
     }
   }
 
-  clickCloseForm(e) {
-    // console.log('[click이벤트]');
-    this.closeForm(e);
+  handleKeydownForm(e) {
+    if (e.key === 'Escape') this.closeForm(e);
+
+    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      e.target.closest('.add-list') ? this.addList(e) : this.addCard(e);
+    }
   }
 
-  /**
-   * 초기 렌더링
-   *
-   * 4.
-   * 5. + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
-   */
+  // + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
+  openForm(e) {
+    const siblingAddForm = e.target.nextElementSibling;
+    siblingAddForm.classList.remove('hidden');
 
+    if (siblingAddForm.classList.contains('add-list')) {
+      this.setState({ isOpenedListForm: true });
+    } else {
+      this.setState({
+        list: this.state.list.map(item =>
+          item.id === +siblingAddForm.closest('article').dataset.listId ? { ...item, isOpenedCardForm: true } : item
+        ),
+      });
+    }
+  }
+
+  // TODO: 모든 이벤트에 preventDefault를 사용했을 때 click이벤트는 동작하는데 submit 이벤트는 동작하지 않는다. -> 해결: submit이벤트인 경우에만 preventDefault를 적용했다. -> 원인을 찾아보자
   addEventListener() {
     return [
-      { type: 'submit', selector: '.add-list', handler: this.addList },
-      { type: 'click', selector: '.close-list-btn', handler: this.clickCloseForm },
-      // { type: 'keydown', selector: '.add-list', handler: this.closeForm },
+      { type: 'submit', selector: '.add-list', handler: this.addList.bind(this) },
+      { type: 'click', selector: '.add-another-btn', handler: this.openForm.bind(this) },
+      { type: 'click', selector: '.close-list-btn', handler: this.closeForm.bind(this) },
+      { type: 'keydown', selector: '.add-list', handler: this.handleKeydownForm.bind(this) },
     ];
   }
 }

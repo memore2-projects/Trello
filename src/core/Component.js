@@ -12,7 +12,7 @@ class Component {
    */
   setState(newState) {
     this.state = { ...this.state, ...newState };
-    // if (this.state !== newState) this.state = newState;
+    localStorage.setItem('trello', JSON.stringify(this.state));
 
     console.log('[RE-RENDERING] state:', this.state);
     render();
@@ -53,20 +53,18 @@ class Component {
 
         // handler를 monkey patch한다.
         event.handler = e => {
-          e.preventDefault();
+          if (e.type === 'submit') e.preventDefault();
 
           // e.target이 selector의 하위 요소일 수도 있다.
-          if (e.target.matches(selector) || e.target.closest(selector)) handler(e);
+
+          if (e.target.matches(selector) || e.target.closest(selector)) {
+            handler(e);
+          }
         };
 
         eventHolder.push(event);
       }
     }
-  }
-
-  generateNextId(targetArr) {
-    // prettier-ignore
-    return Math.max(0, targetArr.map(({id}) => id)) + 1;
   }
 
   /** @abstract */
