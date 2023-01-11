@@ -24,6 +24,7 @@ class App extends Component {
     const { isOpenedPopup } = this.clientState;
 
     document.body.classList.toggle('opened-popup', isOpenedPopup);
+
     // TODO: list, isOpenedListForm 옵셔널 체이닝을 내부에서 해야하는지 고민해보기
     // prettier-ignore
     return `
@@ -59,7 +60,11 @@ class App extends Component {
         closePopup: this.closePopup.bind(this),
         clickPopupOuter: this.clickPopupOuter.bind(this),
         keydownEscPopup: this.keydownEscPopup.bind(this),
-        changeCardTitle: this.changeCardTitle.bind(this)
+        changeCardTitle: this.changeCardTitle.bind(this),
+        openForm: this.openForm.bind(this),
+        changeDescription: this.changeDescription.bind(this),
+        closeForm: this.closeForm.bind(this),
+        keydownEscDescription: this.keydownEscDescription.bind(this),
       }).render() : ''}
     `;
   }
@@ -71,7 +76,72 @@ class App extends Component {
     return Math.max(0, +targetArr.length) + 1;
   }
 
+  findItem(itemId) {
+    return this.serverState.list.find(item => item.id === +itemId);
+  }
+
+  mapList(itemId, newItem) {
+    return this.serverState.list.map(item => (item.id === +itemId ? newItem : item));
+  }
+
+  setFocusTo($target) {
+    const { length } = $target.value;
+
+    $target.focus();
+    $target.setSelectionRange(length, length);
+  }
+
   /* ---------------------------- 공통 event handler ---------------------------- */
+
+  // + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
+  openForm(e) {
+    const $siblingAddForm = e.target.nextElementSibling;
+    $siblingAddForm.classList.remove('hidden');
+
+    if ($siblingAddForm.classList.contains('add-list')) {
+      this.setServerState({ isOpenedListForm: true });
+    } else if ($siblingAddForm.classList.contains('add-card')) {
+      const { itemId } = $siblingAddForm.closest('article').dataset;
+      const item = this.findItem(itemId);
+
+      this.setServerState({ list: this.mapList(itemId, { ...item, isOpenedCardForm: true }) });
+    } else {
+      this.setClientState({ isOpenedDescription: true });
+
+      const $textarea = document.querySelector('.add-description textarea');
+      this.setFocusTo($textarea);
+    }
+  }
+
+  handleKeydownForm(e) {
+    if (e.key === 'Escape') this.closeForm(e);
+
+    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      e.target.closest('.add-list') ? this.addList(e) : this.addCard(e);
+    }
+  }
+
+  // X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈
+  closeForm(e) {
+    const $parentAddForm = e.target.closest('.add-form');
+
+    $parentAddForm.querySelector('textarea').value = '';
+    $parentAddForm.classList.add('hidden');
+
+    if ($parentAddForm.classList.contains('add-list')) {
+      this.setServerState({ isOpenedListForm: false });
+    } else if ($parentAddForm.classList.contains('add-card')) {
+      const { itemId } = $parentAddForm.closest('article').dataset;
+      const item = this.findItem(itemId);
+
+      this.setServerState({ list: this.mapList(itemId, { ...item, isOpenedCardForm: false }) });
+    } else {
+      this.setClientState({ isOpenedDescription: false });
+    }
+  }
+
+  /* ------------------------------ list handler ------------------------------ */
 
   // textarea에 list title을 입력한 다음 Enter 키를 누르거나 Add list 버튼을 클릭하면 list를 생성한다. -> 빈 값일 때 form 유지
   addList(e) {
@@ -94,6 +164,33 @@ class App extends Component {
     document.querySelector('.add-list textarea').focus();
   }
 
+  /**
+   * list title을 변경: Escape나 Enter 키를 누르면 list title이 변경한다.
+   * - 입력값이 이전 값과 동일하면 list title을 변경하지 않는다.
+   * - 입력값이 공백이면 list title을 변경하지 않고 이전 값으로 되돌린다.
+   */
+  changeListTitle(e) {
+    if (e.key !== 'Escape' && e.key !== 'Enter') return;
+    if (e.isComposing || e.keyCode === 29) return;
+
+    const { itemId } = e.target.closest('.trello-list').dataset;
+    const originTitle = this.findItem(itemId).title;
+    const newTitle = e.target.value.trim();
+
+    e.target.blur();
+
+    if (newTitle === originTitle || newTitle === '') {
+      e.target.value = originTitle;
+      return;
+    }
+
+    const item = this.findItem(itemId);
+
+    this.setServerState({ list: this.mapList(itemId, { ...item, title: newTitle }) });
+  }
+
+  /* ------------------------------ card handler ------------------------------ */
+
   // textarea에 card title을 입력한 다음 Enter 키를 누르거나 Add card 버튼을 클릭하면 card를 생성한다
   addCard(e) {
     const { value } = e.target.querySelector('textarea') ?? e.target;
@@ -101,87 +198,68 @@ class App extends Component {
     if (value.trim() === '') return;
 
     const { itemId } = e.target.closest('.trello-list').dataset;
-    const newList = this.serverState.list.map(item =>
-      item.id === +itemId
-        ? { ...item, cards: [...item.cards, { id: this.generateNextId(item.cards), title: value, description: '' }] }
-        : item
-    );
+    const item = this.findItem(itemId);
+    const newList = this.mapList(itemId, {
+      ...item,
+      cards: [...item.cards, { id: this.generateNextId(item.cards), title: value, description: '' }],
+    });
 
     this.setServerState({ list: newList });
   }
 
-  // + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
-  openForm(e) {
-    const siblingAddForm = e.target.nextElementSibling;
-    siblingAddForm.classList.remove('hidden');
+  /* ------------------------------ popup handler ----------------------------- */
 
-    if (siblingAddForm.classList.contains('add-list')) {
-      this.setServerState({ isOpenedListForm: true });
-    } else {
-      this.setServerState({
-        list: this.serverState.list.map(item =>
-          item.id === +siblingAddForm.closest('article').dataset.itemId ? { ...item, isOpenedCardForm: true } : item
-        ),
-      });
-    }
-  }
-
-  handleKeydownForm(e) {
-    if (e.key === 'Escape') this.closeForm(e);
-
-    if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
-      e.preventDefault();
-      e.target.closest('.add-list') ? this.addList(e) : this.addCard(e);
-    }
-  }
-
-  // X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈
-  closeForm(e) {
-    const parentAddForm = e.target.closest('.add-form');
-
-    parentAddForm.querySelector('textarea').value = '';
-    parentAddForm.classList.add('hidden');
-
-    if (parentAddForm.classList.contains('add-list')) {
-      this.setServerState({ isOpenedListForm: false });
-    } else {
-      this.setServerState({
-        list: this.serverState.list.map(item =>
-          item.id === +parentAddForm.closest('article').dataset.itemId ? { ...item, isOpenedCardForm: false } : item
-        ),
-      });
-    }
-  }
-
-  // list title을 변경: Escape나 Enter 키를 누르면 list title이 변경한다.
-  changeListTitle(e) {
-    if (e.key !== 'Escape' && e.key !== 'Enter') return;
-    if (e.isComposing || e.keyCode === 229) return;
-
+  openPopup(e) {
     const { itemId } = e.target.closest('.trello-list').dataset;
-    const originTitle = this.serverState.list.find(item => item.id === +itemId).title;
-    const newTitle = e.target.value.trim();
+    const item = this.findItem(itemId);
+    const { cardId } = e.target.closest('.card-item').dataset;
+    const { title, description } = item.cards.find(card => card.id === +cardId);
 
-    e.target.blur();
-
-    // 입력값이 이전 값과 동일하면 list title을 변경하지 않는다.
-    if (originTitle === newTitle && newTitle === '') {
-      e.target.value = originTitle;
-      return;
-    }
-
-    // 입력값이 공백이면 list title을 변경하지 않고 이전 값으로 되돌린다.
-    if (newTitle === '') {
-      return;
-    }
-
-    this.setServerState({
-      list: this.serverState.list.map(item => (item.id === +itemId ? { ...item, title: newTitle } : item)),
+    this.setClientState({
+      editModeCard: {
+        itemId: +itemId,
+        itemTitle: item.title,
+        card: { id: +cardId, title, description },
+      },
+      isOpenedPopup: true,
     });
   }
 
+  // popup 비활성화 (공통)
+  closePopup() {
+    this.setClientState({
+      editModeCard: {
+        itemId: 0,
+        itemTitle: '',
+        card: null,
+      },
+      isOpenedPopup: false,
+      isOpenedDescription: false,
+    });
+  }
+
+  // popup 비활성화 (외부 영역 클릭시)
+  clickPopupOuter(e) {
+    if (!e.target.closest('.popup-wrapper')) this.closePopup();
+  }
+
+  // popup 비활성화 (Escape 키를 눌렀을 때)
+  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 눌렀을 떄 keydown 이벤트가 동작하지 않았다. 이유는?
+  keydownEscPopup(e) {
+    if (e.key !== 'Escape' || !document.body.classList.contains('opened-popup')) return;
+    if (e.target.matches('.popup-title-input') || e.target.matches('.add-description textarea')) return;
+
+    this.closePopup();
+  }
+
+  /**
+   * card title을 변경하고 Enter 키를 누르면 card title을 변경한다.
+   * - 입력 값이 이전 값과 동일하면 card title을 변경하지 않는다.
+   * - 입력 값이 공백인 상태에서 Enter 키를 누르거나 card title에서 Escape 키를 누르면 card title을 변경하지 않고 이전 값으로 되돌린다.
+   */
   changeCardTitle(e) {
-    if (e.key !== 'Enter') return;
+    if (e.key !== 'Enter' && e.key !== 'Escape') return;
+    if (e.isComposing || e.keyCode === 229) return;
 
     const newTitle = e.target.value.trim();
     const clientCard = this.clientState.editModeCard;
@@ -205,52 +283,26 @@ class App extends Component {
     this.setServerState({ list: newList });
   }
 
-  findItem(itemId) {
-    return this.serverState.list.find(item => item.id === +itemId);
-  }
+  // Save 버튼을 클릭하면 card descripion을 생성/변경한다. 이때 card의 card title 아래 card descripion이 존재함을 알리는 아이콘을 표시한다.
+  changeDescription(e) {
+    const { value } = e.target.previousElementSibling;
+    const clientCard = this.clientState.editModeCard;
 
-  mapList(itemId, newItem) {
-    return this.serverState.list.map(item => (item.id === +itemId ? newItem : item));
-  }
+    clientCard.card.description = value;
+    this.clientState.isOpenedDescription = false;
 
-  openPopup(e) {
-    const { itemId } = e.target.closest('.trello-list').dataset;
-    const item = this.serverState.list.find(item => item.id === +itemId);
-    const { cardId } = e.target.closest('.card-item').dataset;
-    const { title, description } = item.cards.find(card => card.id === +cardId);
-
-    this.setClientState({
-      editModeCard: {
-        itemId: +itemId,
-        itemTitle: item.title,
-        card: { id: +cardId, title, description },
-      },
-      isOpenedPopup: true,
+    const item = this.findItem(clientCard.itemId);
+    const newList = this.mapList(clientCard.itemId, {
+      ...item,
+      cards: item.cards.map(card => (card.id === clientCard.card.id ? { ...card, description: value } : card)),
     });
+
+    this.setServerState({ list: newList });
   }
 
-  // popup을 비활성화한다.
-  closePopup() {
-    this.setClientState({
-      editModeCard: {
-        itemId: 0,
-        itemTitle: '',
-        card: null,
-      },
-      isOpenedPopup: false,
-      isOpenedDescription: false,
-    });
-  }
-
-  // 활성화된 popup의 영역 외부를 클릭하면 popup을 비활성화한다.
-  clickPopupOuter(e) {
-    if (!e.target.closest('.popup-wrapper')) this.closePopup();
-  }
-
-  // Escape 키를 눌렀을 때 popup을 비활성화한다.
-  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 눌렀을 떄 keydown 이벤트가 동작하지 않았다.
-  keydownEscPopup(e) {
-    if (e.key === 'Escape' && document.body.classList.contains('opened-popup')) this.closePopup();
+  // textarea에서 Escape 키를 누르면 입력 form을 클로즈한다.
+  keydownEscDescription(e) {
+    if (e.key === 'Escape') this.closeForm(e);
   }
 
   // const trello = {
