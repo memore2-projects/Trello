@@ -2,6 +2,8 @@ import Component from '../core/Component.js';
 
 class TrelloPopup extends Component {
   /**
+   *
+   *
    * card title 변경
    *
    * 1. card title을 클릭하면 textarea 요소에 입력이 가능하게 된다.
@@ -53,6 +55,17 @@ class TrelloPopup extends Component {
         </article>
       </aside>
     `;
+  }
+
+  addEventListener() {
+    const { closePopup, clickPopupOuter, keydownEscPopup, changeCardTitle } = this.props;
+
+    return [
+      { type: 'click', selector: '.close-popup-btn', handler: closePopup },
+      { type: 'click', selector: '.popup', handler: clickPopupOuter },
+      { type: 'keydown', selector: 'window', handler: keydownEscPopup },
+      { type: 'keydown', selector: '.popup-title-input', handler: changeCardTitle },
+    ];
   }
 }
 

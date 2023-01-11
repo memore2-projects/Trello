@@ -15,12 +15,15 @@ class App extends Component {
       isOpenedPopup: false,
       isOpenedDescription: false,
     };
+
+    this.serverState = JSON.parse(window.localStorage.getItem('trello')) ?? trello;
   }
 
   render() {
-    this.serverState = JSON.parse(window.localStorage.getItem('trello')) ?? trello;
     const { list, isOpenedListForm } = this.serverState;
+    const { isOpenedPopup } = this.clientState;
 
+    document.body.classList.toggle('opened-popup', isOpenedPopup);
     // TODO: list, isOpenedListForm 옵셔널 체이닝을 내부에서 해야하는지 고민해보기
     // prettier-ignore
     return `
@@ -51,8 +54,12 @@ class App extends Component {
         </article>
       </main>
 
-      ${this.clientState.isOpenedPopup ? new TrelloPopup({
-        ...this.clientState
+      ${isOpenedPopup ? new TrelloPopup({
+        ...this.clientState,
+        closePopup: this.closePopup.bind(this),
+        clickPopupOuter: this.clickPopupOuter.bind(this),
+        keydownEscPopup: this.keydownEscPopup.bind(this),
+        changeCardTitle: this.changeCardTitle.bind(this)
       }).render() : ''}
     `;
   }
@@ -153,40 +160,97 @@ class App extends Component {
 
     const { itemId } = e.target.closest('.trello-list').dataset;
     const originTitle = this.serverState.list.find(item => item.id === +itemId).title;
-    const newTitle = e.target.value;
+    const newTitle = e.target.value.trim();
+
+    e.target.blur();
 
     // 입력값이 이전 값과 동일하면 list title을 변경하지 않는다.
-    if (originTitle === newTitle) {
-      e.target.blur();
+    if (originTitle === newTitle && newTitle === '') {
+      e.target.value = originTitle;
       return;
     }
 
     // 입력값이 공백이면 list title을 변경하지 않고 이전 값으로 되돌린다.
-    if (newTitle.trim() === '') {
-      e.target.value = originTitle;
-      e.target.blur();
+    if (newTitle === '') {
       return;
     }
 
     this.setServerState({
       list: this.serverState.list.map(item => (item.id === +itemId ? { ...item, title: newTitle } : item)),
     });
+  }
+
+  changeCardTitle(e) {
+    if (e.key !== 'Enter') return;
+
+    const newTitle = e.target.value.trim();
+    const clientCard = this.clientState.editModeCard;
+    const { title: originTitle, id: cardId } = clientCard.card;
+
     e.target.blur();
+
+    if (newTitle === originTitle || newTitle === '') {
+      e.target.value = originTitle;
+      return;
+    }
+
+    clientCard.card.title = newTitle;
+
+    const item = this.findItem(clientCard.itemId);
+    const newList = this.mapList(clientCard.itemId, {
+      ...item,
+      cards: item.cards.map(card => (card.id === cardId ? { ...card, title: newTitle } : card)),
+    });
+
+    this.setServerState({ list: newList });
+  }
+
+  findItem(itemId) {
+    return this.serverState.list.find(item => item.id === +itemId);
+  }
+
+  mapList(itemId, newItem) {
+    return this.serverState.list.map(item => (item.id === +itemId ? newItem : item));
   }
 
   openPopup(e) {
-    // this.clientState = {
-    //   editModeCard: {
-    //     itemId: 0,
-    //     itemTitle: '',
-    //     card: null,
-    //   },
-    //   isOpenedPopup: false,
-    // };
-    // this.setClientState({
-    //   editModeCard,
-    //   isOpenedPopup: true,
-    // });
+    const { itemId } = e.target.closest('.trello-list').dataset;
+    const item = this.serverState.list.find(item => item.id === +itemId);
+    const { cardId } = e.target.closest('.card-item').dataset;
+    const { title, description } = item.cards.find(card => card.id === +cardId);
+
+    this.setClientState({
+      editModeCard: {
+        itemId: +itemId,
+        itemTitle: item.title,
+        card: { id: +cardId, title, description },
+      },
+      isOpenedPopup: true,
+    });
+  }
+
+  // popup을 비활성화한다.
+  closePopup() {
+    this.setClientState({
+      editModeCard: {
+        itemId: 0,
+        itemTitle: '',
+        card: null,
+      },
+      isOpenedPopup: false,
+      isOpenedDescription: false,
+    });
+  }
+
+  // 활성화된 popup의 영역 외부를 클릭하면 popup을 비활성화한다.
+  clickPopupOuter(e) {
+    if (!e.target.closest('.popup-wrapper')) this.closePopup();
+  }
+
+  // Escape 키를 눌렀을 때 popup을 비활성화한다.
+  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 눌렀을 떄 keydown 이벤트가 동작하지 않았다.
+  keydownEscPopup(e) {
+    if (e.key === 'Escape' && document.body.classList.contains('opened-popup')) this.closePopup();
   }
 
   // const trello = {
