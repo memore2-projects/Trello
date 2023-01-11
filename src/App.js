@@ -42,6 +42,10 @@ class App extends Component {
           closeForm: this.closeForm.bind(this),
           addCard: this.addCard.bind(this),
           openPopup: this.openPopup.bind(this),
+          dragStart: this.dragStart.bind(this),
+          dragEnter: this.dragEnter.bind(this),
+          dragOver: this.dragOver.bind(this),
+          dragDrop: this.dragDrop.bind(this),
         }).render()).join('') ?? ''}
 
         <article class="add-list-article">
@@ -89,6 +93,49 @@ class App extends Component {
 
     $target.focus();
     $target.setSelectionRange(length, length);
+  }
+
+  /* ------------------------------ drag handler ------------------------------ */
+  dragStart(e) {
+    this.dragItem = e.target.closest('.trello-list');
+
+    console.log('starttarget', e.target);
+    console.log('startdragItem', this.dragItem);
+    // this.dragItem.classList.add('dragged');
+  }
+
+  dragEnter(e) {
+    // dom을 직접 조작
+
+    e.preventDefault();
+    if (e.target.closest('.trello-list') === this.dragItem) return;
+
+    const enteredItem = e.target.closest('.trello-list');
+    const standardOffset = enteredItem.getBoundingClientRect().left;
+    const $main = document.querySelector('.main');
+
+    if (e.pageX > standardOffset) {
+      const $item = this.dragItem;
+      console.log('enterItem', $item);
+      const $itemClone = $item.cloneNode(true);
+      const $changeItem = e.target.closest('.trello-list');
+      const $changeItemClone = $changeItem.cloneNode(true);
+
+      $main.replaceChild($itemClone, $changeItem);
+      $main.replaceChild($changeItemClone, $item);
+
+      this.dragItem = $itemClone;
+    }
+  }
+
+  dragOver(e) {
+    e.preventDefault();
+  }
+
+  dragDrop(e) {
+    // state를 변경 랜더일어나고
+    const data = e.dataTransfer.getData('item');
+    console.log('drop', data);
   }
 
   /* ---------------------------- 공통 event handler ---------------------------- */
