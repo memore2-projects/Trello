@@ -34,12 +34,17 @@ li {
   left: -999px;
 }
 
-.under {
+.under-list *,
+.under-card * {
+  visibility: hidden;
+}
+
+.under-list {
   opacity: 0.2;
 }
 
-.under * {
-  visibility: hidden;
+.under-card {
+  opacity: 0.4;
 }
 
 /* button */
@@ -144,6 +149,7 @@ li {
 }
 
 /* card-item */
+
 .card-item {
   margin-bottom: 8px;
   background-color: #fff;
@@ -163,9 +169,9 @@ li {
 
 .open-card-btn {
   display: block;
-  width: 100%;
   padding: 8px;
   text-align: left;
+  width: 256px;
 }
 
 .add-open-btn {

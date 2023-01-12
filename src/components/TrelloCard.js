@@ -5,7 +5,7 @@ class TrelloCard extends Component {
     const { id, title, description } = this.props.card;
 
     return `
-      <li class="card-item" data-card-id="${id}">
+      <li class="card-item" data-card-id="${id}" draggable='true'>
         <button class="open-card-btn">
           ${title}
           ${description ? '<i class="bx bx-align-right"></i>' : ''}
@@ -15,11 +15,13 @@ class TrelloCard extends Component {
   }
 
   addEventListener() {
+    const { openPopup } = this.props;
+
     return [
       {
         type: 'click',
         selector: '.open-card-btn',
-        handler: this.props.openPopup,
+        handler: openPopup,
       },
     ];
   }

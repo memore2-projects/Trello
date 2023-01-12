@@ -65,7 +65,6 @@ class Component {
         // handler를 monkey patch한다.
         event.handler = e => {
           if (e.type === 'submit') e.preventDefault();
-
           // e.target이 selector의 하위 요소일 수도 있다.
 
           if (e.target.matches(selector) || e.target.closest(selector)) {

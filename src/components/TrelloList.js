@@ -20,12 +20,16 @@ class TrelloList extends Component {
           </h2>
 
           <ul class="cards">
-            ${cards.map(card => new TrelloCard({
-              itemId: id,
-              itemTitle: title,
-              card,
-              openPopup: this.props.openPopup,
-            }).render()).join('')}
+            ${cards
+              .map(card =>
+                new TrelloCard({
+                  itemId: id,
+                  itemTitle: title,
+                  card,
+                  openPopup: this.props.openPopup,
+                }).render()
+              )
+              .join('')}
           </ul>
 
           <div class="add-wrapper">
@@ -53,6 +57,7 @@ class TrelloList extends Component {
       dragEnter,
       dragOver,
       dragDrop,
+      dragEnd,
     } = this.props;
 
     return [
@@ -63,8 +68,9 @@ class TrelloList extends Component {
       { type: 'submit', selector: '.add-card', handler: addCard },
       { type: 'dragstart', selector: '.trello-list .list-container', handler: dragStart },
       { type: 'dragenter', selector: '.trello-list', handler: dragEnter },
-      { type: 'dragover', selector: '.trello-list', handler: dragOver },
-      { type: 'drop', selector: '.trello-list', handler: dragDrop },
+      { type: 'dragover', selector: 'body', handler: dragOver },
+      { type: 'drop', selector: 'body', handler: dragDrop },
+      { type: 'dragend', selector: 'body', handler: dragEnd },
     ];
   }
 }
