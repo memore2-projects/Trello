@@ -95,6 +95,26 @@ class App extends Component {
     $target.setSelectionRange(length, length);
   }
 
+  changeNode($enteredNode, direction) {
+    const enterNodeOffset = $enteredNode.getBoundingClientRect()[direction];
+    const draggedNodeOffset = this.draggedNode.getBoundingClientRect()[direction];
+
+    draggedNodeOffset > enterNodeOffset
+      ? $enteredNode.insertAdjacentElement('beforebegin', this.draggedNode)
+      : $enteredNode.insertAdjacentElement('afterend', this.draggedNode);
+  }
+
+  setGhostElement(e, ghostSelector, ghostStyleClass) {
+    this.ghostElement = this.draggedNode.cloneNode(true);
+    const $ghostStyleElement = this.ghostElement.querySelector(ghostSelector);
+
+    e.target.classList.add(ghostStyleClass);
+    $ghostStyleElement.classList.add('dragged');
+
+    document.body.appendChild(this.ghostElement);
+    e.dataTransfer.setDragImage(this.ghostElement, 100, 10);
+  }
+
   /* ---------------------------- 공통 event handler ---------------------------- */
 
   // + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
@@ -313,64 +333,26 @@ class App extends Component {
 
   // TODO: .trello-list가 아닌 자식요소에 .dragged를 추가해야 ghost element의 스타일이 변경된다. 왜?
   dragStart(e) {
-    let $containerClone = null;
-
     if (e.target.closest('.card-item')) {
-      this.draggedItem = e.target.closest('.card-item');
-      this.draggedItemClone = this.draggedItem.cloneNode(true);
-      $containerClone = this.draggedItemClone.querySelector('.open-card-btn');
-
-      e.target.classList.add('under-card');
+      this.draggedNode = e.target.closest('.card-item');
+      this.setGhostElement(e, '.open-card-btn', 'under-card');
     } else {
-      this.draggedItem = e.target.closest('.trello-list');
-      this.draggedItemClone = this.draggedItem.cloneNode(true);
-      $containerClone = this.draggedItemClone.querySelector('.list-container');
-
-      e.target.classList.add('under-list');
+      this.draggedNode = e.target.closest('.trello-list');
+      this.setGhostElement(e, '.list-container', 'under-list');
     }
-
-    $containerClone.classList.add('dragged');
-    document.body.appendChild(this.draggedItemClone);
-    e.dataTransfer.setDragImage(this.draggedItemClone, 100, 10);
   }
 
   dragEnter(e) {
     e.preventDefault();
 
-    if (this.draggedItem.closest('.card-item')) {
-      if (e.target.closest('.card-item') === this.draggedItem || !e.target.closest('.card-item')) return;
+    if (this.draggedNode.closest('.card-item')) {
+      if (e.target.closest('.card-item') === this.draggedNode || !e.target.closest('.card-item')) return;
 
-      const $enteredItem = e.target.closest('.card-item');
-      const standardOffset = $enteredItem.getBoundingClientRect().top;
-      const $cards = $enteredItem.closest('.cards');
-
-      if (e.pageY > standardOffset) {
-        const $draggedItem = this.draggedItem;
-        const $draggedItemClone = $draggedItem.cloneNode(true);
-        const $enteredItemClone = $enteredItem.cloneNode(true);
-
-        $cards.replaceChild($draggedItemClone, $enteredItem);
-        $cards.replaceChild($enteredItemClone, $draggedItem);
-
-        this.draggedItem = $draggedItemClone;
-      }
+      this.changeNode(e.target.closest('.card-item'), 'top');
     } else {
-      if (e.target.closest('.trello-list') === this.draggedItem) return;
+      if (e.target.closest('.trello-list') === this.draggedNode) return;
 
-      const $enteredItem = e.target.closest('.trello-list');
-      const standardOffset = $enteredItem.getBoundingClientRect().left;
-      const $main = document.querySelector('.main');
-
-      if (e.pageX > standardOffset) {
-        const $draggedItem = this.draggedItem;
-        const $draggedItemClone = $draggedItem.cloneNode(true);
-        const $enteredItemClone = $enteredItem.cloneNode(true);
-
-        $main.replaceChild($draggedItemClone, $enteredItem);
-        $main.replaceChild($enteredItemClone, $draggedItem);
-
-        this.draggedItem = $draggedItemClone;
-      }
+      this.changeNode(e.target.closest('.trello-list'), 'left');
     }
   }
 
@@ -379,25 +361,24 @@ class App extends Component {
   }
 
   dragDrop(e) {
-    if (this.draggedItem.closest('.card-item')) {
-      this.draggedItemClone.remove();
-      this.draggedItem.classList.remove('under-card');
+    if (this.draggedNode.closest('.card-item')) {
+      this.ghostElement.remove();
+      this.draggedNode.classList.remove('under-card');
 
-      const trelloCardsId = [...this.draggedItem.closest('.cards').querySelectorAll('.card-item')].map(
-        item => +item.dataset.cardId
-      );
-      const { itemId } = this.draggedItem.closest('.trello-list').dataset;
+      // const { itemId } = this.draggedNode.closest('.trello-list').dataset;
+      // const item = this.findItem(itemId);
+      // const cardItems = [...this.draggedNode.closest('.cards').querySelectorAll('.card-item')];
+      // const trelloCardsId = cardItems.map(item => +item.dataset.cardId);
 
-      const item = this.findItem(itemId);
-      const newList = this.mapList(itemId, {
-        ...item,
-        cards: trelloCardsId.map(id => item.cards.find(card => id === card.id)),
-      });
+      // const newList = this.mapList(itemId, {
+      //   ...item,
+      //   cards: trelloCardsId.map(id => item.cards.find(card => id === card.id)),
+      // });
 
-      this.setServerState({ list: newList });
+      // this.setServerState({ list: newList });
     } else {
-      this.draggedItemClone.remove();
-      this.draggedItem.querySelector('.list-container').classList.remove('under-list');
+      this.ghostElement.remove();
+      this.draggedNode.querySelector('.list-container').classList.remove('under-list');
 
       const trelloListIds = [...document.querySelectorAll('.trello-list')].map(item => +item.dataset.itemId);
       const newList = trelloListIds.map(id => this.findItem(id));
@@ -406,10 +387,11 @@ class App extends Component {
     }
   }
 
-  dragEnd(e) {
-    console.log('end', e);
-    this.draggedItemClone.remove();
-    this.draggedItem.querySelector('.list-container').classList.remove('under-list');
+  dragEnd() {
+    this.ghostElement.remove();
+    this.draggedNode.closest('.card-item')
+      ? this.draggedNode.querySelector('.open-card-btn').classList.remove('under-card')
+      : this.draggedNode.querySelector('.list-container').classList.remove('under-list');
   }
 
   /**
