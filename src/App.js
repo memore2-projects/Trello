@@ -99,8 +99,15 @@ class App extends Component {
   dragStart(e) {
     this.dragItem = e.target.closest('.trello-list');
 
-    console.log('starttarget', e.target);
-    console.log('startdragItem', this.dragItem);
+    const $listClone = this.dragItem.cloneNode(true);
+    e.target.classList.add('under');
+    // 자식요소의 스타일을 바꿔야 transform과 opacity가 동작한다.
+    const $containerClone = $listClone.querySelector('.list-container');
+
+    $containerClone.classList.add('dragged');
+    document.body.appendChild($listClone);
+
+    e.dataTransfer.setDragImage($listClone, 100, 10);
     // this.dragItem.classList.add('dragged');
   }
 
@@ -116,7 +123,6 @@ class App extends Component {
 
     if (e.pageX > standardOffset) {
       const $item = this.dragItem;
-      console.log('enterItem', $item);
       const $itemClone = $item.cloneNode(true);
       const $changeItem = e.target.closest('.trello-list');
       const $changeItemClone = $changeItem.cloneNode(true);
@@ -134,8 +140,8 @@ class App extends Component {
 
   dragDrop(e) {
     // state를 변경 랜더일어나고
-    const data = e.dataTransfer.getData('item');
-    console.log('drop', data);
+    document.querySelector('.dragged').remove();
+    this.dragItem.querySelector('.list-container').classList.remove('under');
   }
 
   /* ---------------------------- 공통 event handler ---------------------------- */

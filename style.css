@@ -29,9 +29,16 @@ li {
 
 .dragged {
   transform: rotate(4deg) !important;
-  transform-origin: top left !important;
-  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.3);
-  opacity: 0.8;
+  background-color: #fff;
+  position: absolute;
+  left: -999px;
+}
+
+.under {
+  opacity: 0.2;
+}
+.under * {
+  visibility: hidden;
 }
 
 /* button */
