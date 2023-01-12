@@ -75,9 +75,9 @@ class App extends Component {
 
   /* --------------------------------- 재사용 함수 --------------------------------- */
 
-  generateNextId(targetArr) {
+  generateNextId(targetArr, property) {
     // prettier-ignore
-    return Math.max(0, +targetArr.length) + 1;
+    return Math.max(0, ...targetArr.map(item => item[property])) + 1;
   }
 
   findItem(itemId) {
@@ -93,55 +93,6 @@ class App extends Component {
 
     $target.focus();
     $target.setSelectionRange(length, length);
-  }
-
-  /* ------------------------------ drag handler ------------------------------ */
-  dragStart(e) {
-    this.dragItem = e.target.closest('.trello-list');
-
-    const $listClone = this.dragItem.cloneNode(true);
-    e.target.classList.add('under');
-    // 자식요소의 스타일을 바꿔야 transform과 opacity가 동작한다.
-    const $containerClone = $listClone.querySelector('.list-container');
-
-    $containerClone.classList.add('dragged');
-    document.body.appendChild($listClone);
-
-    e.dataTransfer.setDragImage($listClone, 100, 10);
-    // this.dragItem.classList.add('dragged');
-  }
-
-  dragEnter(e) {
-    // dom을 직접 조작
-
-    e.preventDefault();
-    if (e.target.closest('.trello-list') === this.dragItem) return;
-
-    const enteredItem = e.target.closest('.trello-list');
-    const standardOffset = enteredItem.getBoundingClientRect().left;
-    const $main = document.querySelector('.main');
-
-    if (e.pageX > standardOffset) {
-      const $item = this.dragItem;
-      const $itemClone = $item.cloneNode(true);
-      const $changeItem = e.target.closest('.trello-list');
-      const $changeItemClone = $changeItem.cloneNode(true);
-
-      $main.replaceChild($itemClone, $changeItem);
-      $main.replaceChild($changeItemClone, $item);
-
-      this.dragItem = $itemClone;
-    }
-  }
-
-  dragOver(e) {
-    e.preventDefault();
-  }
-
-  dragDrop(e) {
-    // state를 변경 랜더일어나고
-    document.querySelector('.dragged').remove();
-    this.dragItem.querySelector('.list-container').classList.remove('under');
   }
 
   /* ---------------------------- 공통 event handler ---------------------------- */
@@ -358,29 +309,70 @@ class App extends Component {
     if (e.key === 'Escape') this.closeForm(e);
   }
 
-  // const trello = {
-  //   list: [
-  //     {
-  //       id: 1,
-  //       title: 'todo',
-  //       cards: [
-  //         { id: 1, title: '시작', description: '' },
-  //         { id: 2, title: '끝', description: '끝났다.' },
-  //       ],
-  //       isOpenedCardForm: false,
-  //     },
-  //     {
-  //       id: 2,
-  //       title: '시작',
-  //       cards: [
-  //         { id: 1, title: '두번쨰', description: '' },
-  //         { id: 2, title: 'ㄴㄹㄷㄹ', description: '끝났다.' },
-  //       ],
-  //       isOpenedCardForm: false,
-  //     },
-  //   ],
-  //   isOpenedListForm: true,
-  // };
+  /* ------------------------------ drag handler ------------------------------ */
+
+  // TODO: .trello-list가 아닌 자식요소에 .dragged를 추가해야 ghost element의 스타일이 변경된다. 왜?
+  dragStart(e) {
+    this.draggedItem = e.target.closest('.trello-list');
+    this.draggedItemClone = this.draggedItem.cloneNode(true);
+    const $containerClone = this.draggedItemClone.querySelector('.list-container');
+
+    e.target.classList.add('under');
+    $containerClone.classList.add('dragged');
+
+    document.body.appendChild(this.draggedItemClone);
+    e.dataTransfer.setDragImage(this.draggedItemClone, 100, 10);
+  }
+
+  dragEnter(e) {
+    e.preventDefault();
+
+    if (e.target.closest('.trello-list') === this.draggedItem) return;
+
+    const $enteredItem = e.target.closest('.trello-list');
+    const standardOffset = $enteredItem.getBoundingClientRect().left;
+    const $main = document.querySelector('.main');
+    this.enteredItemId = $enteredItem.dataset.itemId;
+
+    if (e.pageX > standardOffset) {
+      const $draggedItem = this.draggedItem;
+      const $draggedItemClone = $draggedItem.cloneNode(true);
+      const $enteredItemClone = $enteredItem.cloneNode(true);
+
+      $main.replaceChild($draggedItemClone, $enteredItem);
+      $main.replaceChild($enteredItemClone, $draggedItem);
+
+      this.draggedItem = $draggedItemClone;
+    }
+  }
+
+  dragOver(e) {
+    e.preventDefault();
+  }
+
+  dragDrop(e) {
+    this.draggedItemClone.remove();
+    this.draggedItem.querySelector('.list-container').classList.remove('under');
+
+    const trelloListIds = [...document.querySelectorAll('.trello-list')].map(item => +item.dataset.itemId);
+    console.log(trelloListIds);
+
+    // const draggedItemId = +this.draggedItem.dataset.itemId;
+    // const draggedItem = this.findItem(draggedItemId);
+    // const draggedItemIndex = this.serverState.list.findIndex(item => item.id === draggedItemId);
+
+    // this.serverState.list.splice(draggedItemIndex, 1);
+
+    // /**
+    //  * enteredItemId가 있으면 drop의 대상이 .trello-list이고,
+    //  * undefined일 경우 drop의 대상은 .add-list-article이다.
+    //  */
+    // const droppedItemIndex = this.enteredItemId
+    //   ? this.serverState.list.findIndex(item => item.id === +this.enteredItemId)
+    //   : this.serverState.list.length - 1;
+
+    // this.serverState.list.splice(droppedItemIndex, 0, draggedItem);
+  }
 
   /**
    * list 이동
