@@ -336,10 +336,14 @@ class App extends Component {
     if (e.target.closest('.card-item')) {
       this.draggedNode = e.target.closest('.card-item');
       this.setGhostElement(e, '.open-card-btn', 'under-card');
+
+      e.dataTransfer.setData('cardId', this.draggedNode.closest('.card-item').dataset.cardId);
     } else {
       this.draggedNode = e.target.closest('.trello-list');
       this.setGhostElement(e, '.list-container', 'under-list');
     }
+
+    e.dataTransfer.setData('itemId', this.draggedNode.closest('.trello-list').dataset.itemId);
   }
 
   dragEnter(e) {
@@ -361,21 +365,54 @@ class App extends Component {
   }
 
   dragDrop(e) {
-    if (this.draggedNode.closest('.card-item')) {
+    if (e.target.closest('.card-item')) {
       this.ghostElement.remove();
-      this.draggedNode.classList.remove('under-card');
+      e.target.classList.remove('under-card');
 
-      // const { itemId } = this.draggedNode.closest('.trello-list').dataset;
-      // const item = this.findItem(itemId);
-      // const cardItems = [...this.draggedNode.closest('.cards').querySelectorAll('.card-item')];
-      // const trelloCardsId = cardItems.map(item => +item.dataset.cardId);
+      let newList = null;
 
-      // const newList = this.mapList(itemId, {
-      //   ...item,
-      //   cards: trelloCardsId.map(id => item.cards.find(card => id === card.id)),
-      // });
+      const { itemId } = e.target.closest('.trello-list').dataset;
+      const item = this.findItem(itemId);
+      const cardItems = [...e.target.closest('.cards').querySelectorAll('.card-item')];
+      const trelloCardsId = cardItems.map(item => +item.dataset.cardId);
 
-      // this.setServerState({ list: newList });
+      // dragstart의 .trello-list와 drop의 .trello-list가 다를때,
+      newList = this.mapList(itemId, {
+        ...item,
+        cards: trelloCardsId.map(id => item.cards.find(card => id === card.id)),
+      });
+
+      console.log('newList', newList);
+      // if (itemId !== e.dataTransfer.getData('itemId')) {
+      //   const targetItemId = e.dataTransfer.getData('itemId');
+      //   const targetItem = newList.find(item => item.id === +targetItemId);
+      //   const targetCardItems = [
+      //     ...document.querySelector(`.trello-list[data-item-id="${targetItemId}"]`).querySelectorAll('.card-item'),
+      //   ];
+
+      //   const targetCardsId = targetCardItems.map(item => +item.dataset.cardId);
+      //   const card = targetItem.cards.find(card => card.id === +e.dataTransfer.getData('cardId'));
+
+      //   const enteredItem = newList.find(item => item.id === +itemId);
+
+      //   const enteredCardIndex = enteredItem.cards.findIndex(
+      //     card => card.id === +e.target.closest('.card-item').dataset.cardId
+      //   );
+      //   // console.log('dropTarget', e.target);
+      //   // console.log('draggednode', this.draggedNode);
+      //   // console.log('cardItem', cardItems);
+      //   console.log('enteredItem', enteredItem.cards);
+
+      //   console.log('cardIndex', enteredCardIndex);
+      //   enteredItem.cards.splice(enteredCardIndex + 1, 0, {
+      //     id: this.generateNextId(enteredItem.cards),
+      //     title: card.title,
+      //     description: card.description,
+      //   });
+
+      // }
+
+      this.setServerState({ list: newList });
     } else {
       this.ghostElement.remove();
       this.draggedNode.querySelector('.list-container').classList.remove('under-list');
