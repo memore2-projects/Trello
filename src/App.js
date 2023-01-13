@@ -76,8 +76,8 @@ class App extends Component {
 
   /* --------------------------------- 재사용 함수 --------------------------------- */
 
-  generateNextId(targetArr) {
-    return Math.max(0, ...targetArr.map(item => item.id)) + 1;
+  generateNewId() {
+    return Date.now();
   }
 
   findItem(itemId) {
@@ -93,15 +93,6 @@ class App extends Component {
 
     $target.focus();
     $target.setSelectionRange(length, length);
-  }
-
-  changeNode($enteredNode, direction) {
-    const enterNodeOffset = $enteredNode.getBoundingClientRect()[direction];
-    const draggedNodeOffset = this.draggedNode.getBoundingClientRect()[direction];
-
-    draggedNodeOffset > enterNodeOffset
-      ? $enteredNode.insertAdjacentElement('beforebegin', this.draggedNode)
-      : $enteredNode.insertAdjacentElement('afterend', this.draggedNode);
   }
 
   setGhostElement(e, ghostSelector, ghostStyleClass) {
@@ -177,7 +168,7 @@ class App extends Component {
       list: [
         ...this.serverState.list,
         {
-          id: this.generateNextId(this.serverState.list),
+          id: this.generateNewId(),
           title: value,
           cards: [],
           isOpenedCardForm: false,
@@ -225,7 +216,7 @@ class App extends Component {
     const item = this.findItem(itemId);
     const newList = this.mapList(itemId, {
       ...item,
-      cards: [...item.cards, { id: this.generateNextId(item.cards), title: value, description: '' }],
+      cards: [...item.cards, { id: this.generateNewId(), title: value, description: '' }],
     });
 
     this.setServerState({ list: newList });
@@ -334,11 +325,13 @@ class App extends Component {
   // TODO: .trello-list가 아닌 자식요소에 .dragged를 추가해야 ghost element의 스타일이 변경된다. 왜?
   dragStart(e) {
     if (e.target.closest('.card-item')) {
+      // drag 대상이 .card-item일 경우
       this.draggedNode = e.target.closest('.card-item');
       this.setGhostElement(e, '.open-card-btn', 'under-card');
 
       e.dataTransfer.setData('cardId', this.draggedNode.closest('.card-item').dataset.cardId);
     } else {
+      // drag 대상이 .trello-list일 경우
       this.draggedNode = e.target.closest('.trello-list');
       this.setGhostElement(e, '.list-container', 'under-list');
     }
@@ -349,14 +342,32 @@ class App extends Component {
   dragEnter(e) {
     e.preventDefault();
 
+    const $enteredItem = e.target.closest('.trello-list');
+
     if (this.draggedNode.closest('.card-item')) {
-      if (e.target.closest('.card-item') === this.draggedNode || !e.target.closest('.card-item')) return;
+      // drag 대상이 .card-item일 경우
+      const $enteredCard = e.target.closest('.card-item');
+      if ($enteredCard === this.draggedNode) return;
 
-      this.changeNode(e.target.closest('.card-item'), 'top');
+      if ($enteredCard) {
+        const { top, height } = this.draggedNode.getBoundingClientRect();
+        const standard = top + height / 2;
+
+        $enteredCard.insertAdjacentElement(e.pageY < standard ? 'beforebegin' : 'afterend', this.draggedNode);
+      } else {
+        const $enteredCard = $enteredItem.querySelector('.cards');
+        const { top, bottom } = $enteredCard.getBoundingClientRect();
+
+        if (e.pageY < top) $enteredCard.prepend(this.draggedNode);
+        else if (e.pageY > bottom) $enteredCard.append(this.draggedNode);
+      }
     } else {
-      if (e.target.closest('.trello-list') === this.draggedNode) return;
+      // drag 대상이 .trello-list일 경우
+      if ($enteredItem === this.draggedNode) return;
 
-      this.changeNode(e.target.closest('.trello-list'), 'left');
+      this.draggedNode.getBoundingClientRect().left > $enteredItem.getBoundingClientRect().left
+        ? $enteredItem.insertAdjacentElement('beforebegin', this.draggedNode)
+        : $enteredItem.insertAdjacentElement('afterend', this.draggedNode);
     }
   }
 
@@ -365,55 +376,40 @@ class App extends Component {
   }
 
   dragDrop(e) {
-    if (e.target.closest('.card-item')) {
+    if (this.draggedNode.closest('.card-item')) {
+      // drag 대상이 .card-item일 경우
       this.ghostElement.remove();
-      e.target.classList.remove('under-card');
+      this.draggedNode.classList.remove('under-card');
 
-      let newList = null;
+      const startedItemId = +e.dataTransfer.getData('itemId');
+      const startedItem = this.findItem(startedItemId);
 
-      const { itemId } = e.target.closest('.trello-list').dataset;
-      const item = this.findItem(itemId);
-      const cardItems = [...e.target.closest('.cards').querySelectorAll('.card-item')];
-      const trelloCardsId = cardItems.map(item => +item.dataset.cardId);
+      const $droppedItem = this.draggedNode.closest('.trello-list');
+      const droppedItemId = +$droppedItem.dataset.itemId;
+      const droppedItem = this.findItem(droppedItemId);
+      const droppedCardsIds = [...$droppedItem.querySelectorAll('.card-item')].map(card => +card.dataset.cardId);
 
-      // dragstart의 .trello-list와 drop의 .trello-list가 다를때,
-      newList = this.mapList(itemId, {
-        ...item,
-        cards: trelloCardsId.map(id => item.cards.find(card => id === card.id)),
-      });
-
-      console.log('newList', newList);
-      // if (itemId !== e.dataTransfer.getData('itemId')) {
-      //   const targetItemId = e.dataTransfer.getData('itemId');
-      //   const targetItem = newList.find(item => item.id === +targetItemId);
-      //   const targetCardItems = [
-      //     ...document.querySelector(`.trello-list[data-item-id="${targetItemId}"]`).querySelectorAll('.card-item'),
-      //   ];
-
-      //   const targetCardsId = targetCardItems.map(item => +item.dataset.cardId);
-      //   const card = targetItem.cards.find(card => card.id === +e.dataTransfer.getData('cardId'));
-
-      //   const enteredItem = newList.find(item => item.id === +itemId);
-
-      //   const enteredCardIndex = enteredItem.cards.findIndex(
-      //     card => card.id === +e.target.closest('.card-item').dataset.cardId
-      //   );
-      //   // console.log('dropTarget', e.target);
-      //   // console.log('draggednode', this.draggedNode);
-      //   // console.log('cardItem', cardItems);
-      //   console.log('enteredItem', enteredItem.cards);
-
-      //   console.log('cardIndex', enteredCardIndex);
-      //   enteredItem.cards.splice(enteredCardIndex + 1, 0, {
-      //     id: this.generateNextId(enteredItem.cards),
-      //     title: card.title,
-      //     description: card.description,
-      //   });
-
-      // }
+      const newList = this.serverState.list.map(item =>
+        item.id === droppedItemId
+          ? {
+              ...item,
+              cards: droppedCardsIds.map(cardId =>
+                cardId === +this.draggedNode.dataset.cardId
+                  ? startedItem.cards.find(card => card.id === cardId)
+                  : droppedItem.cards.find(card => card.id === cardId)
+              ),
+            }
+          : startedItemId !== droppedItemId && item.id === startedItemId
+          ? {
+              ...item,
+              cards: startedItem.cards.filter(card => card.id !== +this.draggedNode.dataset.cardId),
+            }
+          : item
+      );
 
       this.setServerState({ list: newList });
     } else {
+      // drag 대상이 .trello-list일 경우
       this.ghostElement.remove();
       this.draggedNode.querySelector('.list-container').classList.remove('under-list');
 
@@ -430,21 +426,6 @@ class App extends Component {
       ? this.draggedNode.querySelector('.open-card-btn').classList.remove('under-card')
       : this.draggedNode.querySelector('.list-container').classList.remove('under-list');
   }
-
-  /**
-   * card 이동
-   *
-   * 1.card를 drag & drop한다.
-   * 2.card를 drag할 때 card의 이동이 사용자에게 보여져야 하므로 상태 변경없이 DOM을 직접 변경하고 drop한 이후에 상태를 변경한다.
-   *
-   *  card를 다른 card 위로 drag하는 경우
-   * 1. 다른 card의 중앙보다 마우스 커서가 위에 위치하면 drag 중인 card를 다른 card의 위로 이동시킨다.
-   * 2. 다른 card의 중앙보다 마우스 커서가 아래에 위치하면 drag 중인 card를 다른 card의 아래로 이동시킨다.
-   *
-   * card를 다른 card 위로 drag하지 않는 경우
-   * 1. drag 중인 마우스 커서의 x축 좌표 내에 위치한 list의 최하단에 drag 중인 card를 이동시킨다.
-   * 2. list 외부에 card를 drop해도 정상적으로 동작해야 한다.
-   */
 
   // TODO: 모든 이벤트에 preventDefault를 사용했을 때 click이벤트는 동작하는데 submit 이벤트는 동작하지 않는다. -> 해결: submit이벤트인 경우에만 preventDefault를 적용했다. -> 원인을 찾아보자
   addEventListener() {
