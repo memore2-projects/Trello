@@ -15,15 +15,7 @@ class TrelloCard extends Component {
   }
 
   addEventListener() {
-    const { openPopup } = this.props;
-
-    return [
-      {
-        type: 'click',
-        selector: '.open-card-btn',
-        handler: openPopup,
-      },
-    ];
+    return [{ type: 'click', selector: '.open-card-btn', handler: this.props.openPopup }];
   }
 }
 

@@ -20,16 +20,11 @@ class TrelloList extends Component {
           </h2>
 
           <ul class="cards">
-            ${cards
-              .map(card =>
+            ${cards.map(card =>
                 new TrelloCard({
-                  itemId: id,
-                  itemTitle: title,
                   card,
                   openPopup: this.props.openPopup,
-                }).render()
-              )
-              .join('')}
+                }).render()).join('')}
           </ul>
 
           <div class="add-wrapper">
@@ -68,6 +63,7 @@ class TrelloList extends Component {
       { type: 'submit', selector: '.add-card', handler: addCard },
       { type: 'dragstart', selector: '.trello-list .list-container', handler: dragStart },
       { type: 'dragenter', selector: '.trello-list', handler: dragEnter },
+      // selector에 window를 하지 않고 body를 한 이유: window는 중복검사를 하지 않아서 TrelloList 인스턴스가 생성될떄마다 이벤트가 새롭게 등록되어 중복이 발생한다.
       { type: 'dragover', selector: 'body', handler: dragOver },
       { type: 'drop', selector: 'body', handler: dragDrop },
       { type: 'dragend', selector: 'body', handler: dragEnd },

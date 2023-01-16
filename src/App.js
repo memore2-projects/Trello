@@ -1,22 +1,14 @@
 import Component from './core/Component.js';
 import { TrelloList, TrelloPopup } from './components/index.js';
-import trello from './temp/mockData.js';
+import { setFocusTo } from './libs/functions.js';
 
 class App extends Component {
   constructor() {
     super();
 
-    this.clientState = {
-      editModeCard: {
-        itemId: 0,
-        itemTitle: '',
-        card: null,
-      },
-      isOpenedPopup: false,
-      isOpenedDescription: false,
-    };
+    this.clientState = this.initClientState();
 
-    this.serverState = JSON.parse(window.localStorage.getItem('trello')) ?? trello;
+    this.serverState = JSON.parse(window.localStorage.getItem('trello')) ?? { list: [], isOpenedListForm: true };
   }
 
   render() {
@@ -25,7 +17,6 @@ class App extends Component {
 
     document.body.classList.toggle('opened-popup', isOpenedPopup);
 
-    // TODO: list, isOpenedListForm 옵셔널 체이닝을 내부에서 해야하는지 고민해보기
     // prettier-ignore
     return `
       <header class="global-header">
@@ -47,7 +38,7 @@ class App extends Component {
           dragOver: this.dragOver.bind(this),
           dragDrop: this.dragDrop.bind(this),
           dragEnd: this.dragEnd.bind(this),
-        }).render()).join('') ?? ''}
+        }).render()).join('')}
 
         <article class="add-list-article">
           <button class="add-another-btn ghost-btn ${isOpenedListForm ? 'hidden' : ''}">+ Add another list</button>
@@ -76,10 +67,6 @@ class App extends Component {
 
   /* --------------------------------- 재사용 함수 --------------------------------- */
 
-  generateNewId() {
-    return Date.now();
-  }
-
   findItem(itemId) {
     return this.serverState.list.find(item => item.id === +itemId);
   }
@@ -88,43 +75,47 @@ class App extends Component {
     return this.serverState.list.map(item => (item.id === +itemId ? newItem : item));
   }
 
-  setFocusTo($target) {
-    const { length } = $target.value;
-
-    $target.focus();
-    $target.setSelectionRange(length, length);
-  }
-
   setGhostElement(e, ghostSelector, ghostStyleClass) {
     this.ghostElement = this.draggedNode.cloneNode(true);
-    const $ghostStyleElement = this.ghostElement.querySelector(ghostSelector);
 
     e.target.classList.add(ghostStyleClass);
-    $ghostStyleElement.classList.add('dragged');
+    this.ghostElement.querySelector(ghostSelector).classList.add('dragged');
 
     document.body.appendChild(this.ghostElement);
     e.dataTransfer.setDragImage(this.ghostElement, 100, 10);
   }
 
+  initClientState() {
+    return {
+      editModeCard: {
+        itemId: 0,
+        itemTitle: '',
+        card: null,
+      },
+      isOpenedPopup: false,
+      isOpenedDescription: false,
+    };
+  }
   /* ---------------------------- 공통 event handler ---------------------------- */
 
-  // + Add another list 버튼을 클릭하면 입력 form을 오픈한다.
   openForm(e) {
     const $siblingAddForm = e.target.nextElementSibling;
     $siblingAddForm.classList.remove('hidden');
 
     if ($siblingAddForm.classList.contains('add-list')) {
+      // Add another list 버튼을 클릭하면 입력 form을 오픈한다.
       this.setServerState({ isOpenedListForm: true });
+      setFocusTo(document.querySelector('.add-list textarea'));
     } else if ($siblingAddForm.classList.contains('add-card')) {
+      // Add a card 버튼을 클릭하면 입력 form을 오픈한다.
       const { itemId } = $siblingAddForm.closest('article').dataset;
       const item = this.findItem(itemId);
 
       this.setServerState({ list: this.mapList(itemId, { ...item, isOpenedCardForm: true }) });
     } else {
+      // popup의 description 버튼을 클릭하면 입력 form을 오픈한다.
       this.setClientState({ isOpenedDescription: true });
-
-      const $textarea = document.querySelector('.add-description textarea');
-      this.setFocusTo($textarea);
+      setFocusTo(document.querySelector('.add-description textarea'));
     }
   }
 
@@ -132,6 +123,7 @@ class App extends Component {
     if (e.key === 'Escape') this.closeForm(e);
 
     if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+      // enter키 입력의 기본동작인 개행을 방지하기 위해 e.preventDefault() 사용
       e.preventDefault();
       e.target.closest('.add-list') ? this.addList(e) : this.addCard(e);
     }
@@ -139,19 +131,22 @@ class App extends Component {
 
   // X 버튼을 클릭하거나 textarea에서 Escape 키를 누르면 입력 form을 클로즈
   closeForm(e) {
-    const $parentAddForm = e.target.closest('.add-form');
+    const $addForm = e.target.closest('.add-form');
 
-    $parentAddForm.querySelector('textarea').value = '';
-    $parentAddForm.classList.add('hidden');
+    $addForm.querySelector('textarea').value = '';
+    $addForm.classList.add('hidden');
 
-    if ($parentAddForm.classList.contains('add-list')) {
+    if ($addForm.classList.contains('add-list')) {
+      // add-list의 form을 닫는다.
       this.setServerState({ isOpenedListForm: false });
-    } else if ($parentAddForm.classList.contains('add-card')) {
-      const { itemId } = $parentAddForm.closest('article').dataset;
+    } else if ($addForm.classList.contains('add-card')) {
+      // add-card의 form을 닫는다.
+      const { itemId } = $addForm.closest('article').dataset;
       const item = this.findItem(itemId);
 
       this.setServerState({ list: this.mapList(itemId, { ...item, isOpenedCardForm: false }) });
     } else {
+      // popup의 description form을 닫는다.
       this.setClientState({ isOpenedDescription: false });
     }
   }
@@ -168,7 +163,7 @@ class App extends Component {
       list: [
         ...this.serverState.list,
         {
-          id: this.generateNewId(),
+          id: Date.now(),
           title: value,
           cards: [],
           isOpenedCardForm: false,
@@ -189,17 +184,15 @@ class App extends Component {
     if (e.isComposing || e.keyCode === 29) return;
 
     const { itemId } = e.target.closest('.trello-list').dataset;
-    const originTitle = this.findItem(itemId).title;
+    const item = this.findItem(itemId);
     const newTitle = e.target.value.trim();
 
     e.target.blur();
 
-    if (newTitle === originTitle || newTitle === '') {
-      e.target.value = originTitle;
+    if (newTitle === item.title || newTitle === '') {
+      e.target.value = item.title;
       return;
     }
-
-    const item = this.findItem(itemId);
 
     this.setServerState({ list: this.mapList(itemId, { ...item, title: newTitle }) });
   }
@@ -216,14 +209,14 @@ class App extends Component {
     const item = this.findItem(itemId);
     const newList = this.mapList(itemId, {
       ...item,
-      cards: [...item.cards, { id: this.generateNewId(), title: value, description: '' }],
+      cards: [...item.cards, { id: Date.now(), title: value, description: '' }],
     });
 
     this.setServerState({ list: newList });
   }
 
   /* ------------------------------ popup handler ----------------------------- */
-
+  // popup 활성화
   openPopup(e) {
     const { itemId } = e.target.closest('.trello-list').dataset;
     const item = this.findItem(itemId);
@@ -242,15 +235,7 @@ class App extends Component {
 
   // popup 비활성화 (공통)
   closePopup() {
-    this.setClientState({
-      editModeCard: {
-        itemId: 0,
-        itemTitle: '',
-        card: null,
-      },
-      isOpenedPopup: false,
-      isOpenedDescription: false,
-    });
+    this.setClientState(this.initClientState());
   }
 
   // popup 비활성화 (외부 영역 클릭시)
@@ -259,7 +244,7 @@ class App extends Component {
   }
 
   // popup 비활성화 (Escape 키를 눌렀을 때)
-  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 눌렀을 떄 keydown 이벤트가 동작하지 않았다. 이유는?
+  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 입력하면 keydown 이벤트가 동작하지 않았다. 이유는?
   keydownEscPopup(e) {
     if (e.key !== 'Escape' || !document.body.classList.contains('opened-popup')) return;
     if (e.target.matches('.popup-title-input') || e.target.matches('.add-description textarea')) return;
@@ -423,7 +408,7 @@ class App extends Component {
   dragEnd() {
     this.ghostElement.remove();
     this.draggedNode.closest('.card-item')
-      ? this.draggedNode.querySelector('.open-card-btn').classList.remove('under-card')
+      ? this.draggedNode.closest('.card-item').classList.remove('under-card')
       : this.draggedNode.querySelector('.list-container').classList.remove('under-list');
   }
 

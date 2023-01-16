@@ -6,7 +6,7 @@ class TrelloPopup extends Component {
     const { title, description } = editModeCard.card;
 
     return `
-      <aside class="popup">
+      <aside class="popup" >
         <article class="popup-wrapper">
           <header class="popup-header">
             <h3 class="popup-title input-wrapper">
