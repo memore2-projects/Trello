@@ -45,10 +45,6 @@ class Component {
        * event.selector === null => 이벤트 핸들러는 root container에 등록된다.
        * 위와 같은 경우 이벤트 핸들러에 if 문을 삽입해 새롭게 생성할 필요가 없다.
        */
-      if (event.selector === 'window' || event.selector === null) {
-        eventHolder.push(event);
-        continue;
-      }
 
       /**
        * eventHolder 배열에 event type과 selector가 동일한 event 객체가 이미 존재하면 push하지 않는다.
@@ -59,21 +55,25 @@ class Component {
        */
       const duplicated = eventHolder.find(({ type, selector }) => type === event.type && selector === event.selector);
 
-      if (!duplicated) {
-        const { selector, handler } = event;
+      if (duplicated) continue;
 
-        // handler를 monkey patch한다.
+      const { selector, handler } = event;
+
+      // handler를 monkey patch한다.
+      if (event.selector === 'window' || event.selector === null) {
+        event.handler = e => handler(e);
+      } else {
         event.handler = e => {
           if (e.type === 'submit') e.preventDefault();
-          // e.target이 selector의 하위 요소일 수도 있다.
 
+          // e.target이 selector의 하위 요소일 수도 있다.
           if (e.target.matches(selector) || e.target.closest(selector)) {
             handler(e);
           }
         };
-
-        eventHolder.push(event);
       }
+
+      eventHolder.push(event);
     }
   }
 

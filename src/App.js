@@ -120,7 +120,10 @@ class App extends Component {
   }
 
   handleKeydownForm(e) {
-    if (e.key === 'Escape') this.closeForm(e);
+    if (e.key === 'Escape') {
+      console.log('keydown', e.target);
+      this.closeForm(e);
+    }
 
     if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
       // enter키 입력의 기본동작인 개행을 방지하기 위해 e.preventDefault() 사용
@@ -248,7 +251,7 @@ class App extends Component {
   keydownEscPopup(e) {
     if (e.key !== 'Escape' || !document.body.classList.contains('opened-popup')) return;
     if (e.target.matches('.popup-title-input') || e.target.matches('.add-description textarea')) return;
-
+    console.log('e', e, e.target);
     this.closePopup();
   }
 

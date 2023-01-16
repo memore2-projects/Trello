@@ -55,7 +55,7 @@ class TrelloPopup extends Component {
     return [
       { type: 'click', selector: '.close-popup-btn', handler: closePopup },
       { type: 'click', selector: '.popup', handler: clickPopupOuter },
-      { type: 'keydown', selector: 'window', handler: keydownEscPopup },
+      { type: 'keydown', selector: 'body', handler: keydownEscPopup },
       { type: 'keydown', selector: '.popup-title-input', handler: changeCardTitle },
       { type: 'click', selector: '.open-description-btn', handler: openForm },
       { type: 'click', selector: '.add-description-btn', handler: changeDescription },
