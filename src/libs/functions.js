@@ -5,4 +5,7 @@ const setFocusTo = $target => {
   $target.setSelectionRange(length, length);
 };
 
-export { setFocusTo };
+const getIds = (dataset, selector, target = document) =>
+  [...target.querySelectorAll(selector)].map(item => +item.dataset[dataset]);
+
+export { setFocusTo, getIds };

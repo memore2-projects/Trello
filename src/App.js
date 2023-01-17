@@ -1,6 +1,6 @@
 import Component from './core/Component.js';
 import { TrelloList, TrelloPopup } from './components/index.js';
-import { setFocusTo } from './libs/functions.js';
+import { setFocusTo, getIds } from './libs/functions.js';
 
 class App extends Component {
   constructor() {
@@ -121,7 +121,6 @@ class App extends Component {
 
   handleKeydownForm(e) {
     if (e.key === 'Escape') {
-      console.log('keydown', e.target);
       this.closeForm(e);
     }
 
@@ -247,11 +246,9 @@ class App extends Component {
   }
 
   // popup 비활성화 (Escape 키를 눌렀을 때)
-  // TODO: selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 입력하면 keydown 이벤트가 동작하지 않았다. 이유는?
   keydownEscPopup(e) {
     if (e.key !== 'Escape' || !document.body.classList.contains('opened-popup')) return;
     if (e.target.matches('.popup-title-input') || e.target.matches('.add-description textarea')) return;
-    console.log('e', e, e.target);
     this.closePopup();
   }
 
@@ -288,7 +285,7 @@ class App extends Component {
 
   // Save 버튼을 클릭하면 card descripion을 생성/변경한다. 이때 card의 card title 아래 card descripion이 존재함을 알리는 아이콘을 표시한다.
   changeDescription(e) {
-    const { value } = e.target.previousElementSibling;
+    const { value } = e.target.querySelector('.add-description textarea');
     const clientCard = this.clientState.editModeCard;
 
     clientCard.card.description = value;
@@ -317,7 +314,7 @@ class App extends Component {
       this.draggedNode = e.target.closest('.card-item');
       this.setGhostElement(e, '.open-card-btn', 'under-card');
 
-      e.dataTransfer.setData('cardId', this.draggedNode.closest('.card-item').dataset.cardId);
+      e.dataTransfer.setData('cardId', this.draggedNode.dataset.cardId);
     } else {
       // drag 대상이 .trello-list일 경우
       this.draggedNode = e.target.closest('.trello-list');
@@ -335,6 +332,7 @@ class App extends Component {
     if (this.draggedNode.closest('.card-item')) {
       // drag 대상이 .card-item일 경우
       const $enteredCard = e.target.closest('.card-item');
+
       if ($enteredCard === this.draggedNode) return;
 
       if ($enteredCard) {
@@ -343,11 +341,11 @@ class App extends Component {
 
         $enteredCard.insertAdjacentElement(e.pageY < standard ? 'beforebegin' : 'afterend', this.draggedNode);
       } else {
-        const $enteredCard = $enteredItem.querySelector('.cards');
-        const { top, bottom } = $enteredCard.getBoundingClientRect();
+        const $enteredCards = $enteredItem.querySelector('.cards');
+        const { top, bottom } = $enteredCards.getBoundingClientRect();
 
-        if (e.pageY < top) $enteredCard.prepend(this.draggedNode);
-        else if (e.pageY > bottom) $enteredCard.append(this.draggedNode);
+        if (e.pageY < top) $enteredCards.prepend(this.draggedNode);
+        else if (e.pageY > bottom) $enteredCards.append(this.draggedNode);
       }
     } else {
       // drag 대상이 .trello-list일 경우
@@ -375,7 +373,7 @@ class App extends Component {
       const $droppedItem = this.draggedNode.closest('.trello-list');
       const droppedItemId = +$droppedItem.dataset.itemId;
       const droppedItem = this.findItem(droppedItemId);
-      const droppedCardsIds = [...$droppedItem.querySelectorAll('.card-item')].map(card => +card.dataset.cardId);
+      const droppedCardsIds = getIds('cardId', '.card-item', $droppedItem);
 
       const newList = this.serverState.list.map(item =>
         item.id === droppedItemId
@@ -401,7 +399,7 @@ class App extends Component {
       this.ghostElement.remove();
       this.draggedNode.querySelector('.list-container').classList.remove('under-list');
 
-      const trelloListIds = [...document.querySelectorAll('.trello-list')].map(item => +item.dataset.itemId);
+      const trelloListIds = getIds('itemId', '.trello-list');
       const newList = trelloListIds.map(id => this.findItem(id));
 
       this.setServerState({ list: newList });
@@ -411,11 +409,10 @@ class App extends Component {
   dragEnd() {
     this.ghostElement.remove();
     this.draggedNode.closest('.card-item')
-      ? this.draggedNode.closest('.card-item').classList.remove('under-card')
+      ? this.draggedNode.classList.remove('under-card')
       : this.draggedNode.querySelector('.list-container').classList.remove('under-list');
   }
 
-  // TODO: 모든 이벤트에 preventDefault를 사용했을 때 click이벤트는 동작하는데 submit 이벤트는 동작하지 않는다. -> 해결: submit이벤트인 경우에만 preventDefault를 적용했다. -> 원인을 찾아보자
   addEventListener() {
     return [
       { type: 'submit', selector: '.add-list', handler: this.addList.bind(this) },

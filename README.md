@@ -93,17 +93,21 @@ if (!duplicated) {
 
 ## selector를 window가 아닌 다른걸로 줬을 때, popup-wrapper를 클릭하고 키를 입력하면 keydown 이벤트가 동작하지 않았다. 이유는?
 
-- keydown 이벤트는 input이나 contentEditable, tabindex="-1" 속성을 가진 element에 포커스가 이동해야 이벤트가 발생한다.
-- window에 이벤트를 등록하면 항상 동작하는데
+- keydown 및 keyboard 이벤트는 input이나 contentEditable, tabindex="-1" 속성을 가진 element에 포커스가 이동해야 이벤트가 발생한다.
+- window에 이벤트를 등록하면 항상 동작하는데 window는 탭을 기준으로 focus 관련 이벤트가 발생한다.(focusin, focusout, focus, blur)
+- 즉, window는 focus가 가능하므로 keydown이벤트를 감지할 수 있다.
 
-contenteditable -> true로 속성을 추가하면 해당 element는 편집이 가능하다.(input/text처럼 동작)
+## 모든 이벤트에 preventDefault를 사용했을 때 click이벤트는 동작하는데 submit 이벤트는 동작하지 않는다.
 
-```html
-
-```
+- submit 이벤트는 click이벤트가 트리거가 돼서 발생하는데 모든이벤트에 e.preventDefault()를 사용하면 click이벤트를 막기때문에 submit의 트리거가 발생하지 않는다.
+- 따라서 submit 되었을때 페이지 전환을 막으려면 submit 이벤트인 경우에만 preventDefault를 적용한다.
 
 # 새로 알게 된 것
 
 ## addEventListener의 once option
 
-addEventListener 내장 메서드의 옵션으로, addEventListener의 세번째 인수에 once:true를 설정하면 핸들러를 한 번만 호출하고 브라우저에서 자동 제거한다. (removeEventListener를 따로 할 필요가 없다.)
+- addEventListener 내장 메서드의 옵션으로, addEventListener의 세번째 인수에 once:true를 설정하면 핸들러를 한 번만 호출하고 브라우저에서 자동 제거한다. (removeEventListener를 따로 할 필요가 없다.)
+
+## contenteditable
+
+- 태그에 contenteditable="true" 속성을 추가하면 해당 element는 편집이 가능하다.(input/text처럼 동작)

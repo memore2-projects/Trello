@@ -6,7 +6,7 @@ class TrelloPopup extends Component {
     const { title, description } = editModeCard.card;
 
     return `
-      <aside class="popup" >
+      <aside class="popup">
         <article class="popup-wrapper">
           <header class="popup-header">
             <h3 class="popup-title input-wrapper">
@@ -55,10 +55,10 @@ class TrelloPopup extends Component {
     return [
       { type: 'click', selector: '.close-popup-btn', handler: closePopup },
       { type: 'click', selector: '.popup', handler: clickPopupOuter },
-      { type: 'keydown', selector: 'body', handler: keydownEscPopup },
+      { type: 'keydown', selector: 'window', handler: keydownEscPopup },
       { type: 'keydown', selector: '.popup-title-input', handler: changeCardTitle },
       { type: 'click', selector: '.open-description-btn', handler: openForm },
-      { type: 'click', selector: '.add-description-btn', handler: changeDescription },
+      { type: 'submit', selector: '.add-description', handler: changeDescription },
       { type: 'click', selector: '.close-description-btn', handler: closeForm },
       { type: 'keydown', selector: '.add-description textarea', handler: keydownEscDescription },
     ];
